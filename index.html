@@ -129,7 +129,7 @@
       flex-direction: column;
       padding: 24px 32px;
       overflow-y: auto;
-      min-width: 0; /* prevent overflow on small screens */
+      min-width: 0;
     }
 
     /* Tabs */
@@ -141,7 +141,7 @@
       flex-wrap: nowrap;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-      scrollbar-width: none; /* Firefox */
+      scrollbar-width: none;
     }
     .tabs::-webkit-scrollbar { display: none; }
     .tab-btn {
@@ -406,7 +406,7 @@
       .item .meta { font-size: 10px; }
       .chart-container canvas { max-height: 180px; }
       #resolveBtn, #editSaveBtn, .btn-secondary { font-size: 13px; padding: 10px 16px; }
-      .shortcuts { display: none; } /* hide shortcuts on small screens */
+      .shortcuts { display: none; }
     }
 
     @media (max-width: 480px) {
@@ -581,6 +581,7 @@
     var cachedNames = null;
     var cachedSheetNames = null;
 
+    // ===================== FIXED callApi =====================
     function callApi(action, data, success, error) {
       var url = API_BASE + '?action=' + encodeURIComponent(action);
       for (var key in data) {
@@ -589,12 +590,24 @@
         }
       }
       fetch(url)
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) success(result.data);
-          else error(new Error(result.error));
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+          }
+          return response.json();
         })
-        .catch(err => error(err));
+        .then(function(result) {
+          if (result.success) {
+            success(result.data);
+          } else {
+            // The server returned an error message
+            error(new Error(result.error || 'Unknown server error'));
+          }
+        })
+        .catch(function(err) {
+          // Network error, JSON parse error, or any other exception
+          error(new Error('Network error: ' + err.message));
+        });
     }
 
     // Cache names and sheet names on load
@@ -1299,7 +1312,9 @@
         populateNameDropdowns(names);
         document.getElementById('saveNamesBtn').disabled = false;
       }, function(error) {
-        document.getElementById('adminMsg').textContent = 'Error: ' + error.message;
+        // error is guaranteed to be an Error object
+        var msg = error && error.message ? error.message : 'Unknown error';
+        document.getElementById('adminMsg').textContent = 'Error: ' + msg;
         document.getElementById('saveNamesBtn').disabled = false;
       });
     });
