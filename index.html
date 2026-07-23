@@ -450,7 +450,7 @@
       <button type="button" class="tab-btn" data-tab="resolve">Resolve</button>
       <button type="button" class="tab-btn" data-tab="edit">Edit</button>
       <button type="button" class="tab-btn" data-tab="dashboard">Dashboard</button>
-      <button type="button" class="tab-btn" id="adminTabBtn" data-tab="admin" style="display:none;">Admin</button>
+      <button type="button" class="tab-btn" id="adminTabBtn" data-tab="admin">Admin</button>
     </div>
 
     <!-- ===== NEW QUERY ===== -->
@@ -577,11 +577,10 @@
   <!-- ======== JAVASCRIPT ======== -->
   <script>
     /* ---------- API communication ---------- */
-    var API_BASE = 'https://script.google.com/macros/s/AKfycbyEcBTJPWjnIisV6mPCSQJgiZe1KJB0T5KVofiirD_Rn_guBFchVUr9tus1vMa7rBf3rA/exec';  // UPDATE THIS
+    var API_BASE = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';  // UPDATE THIS
     var cachedNames = null;
     var cachedSheetNames = null;
 
-    // ===================== FIXED callApi =====================
     function callApi(action, data, success, error) {
       var url = API_BASE + '?action=' + encodeURIComponent(action);
       for (var key in data) {
@@ -600,22 +599,19 @@
           if (result.success) {
             success(result.data);
           } else {
-            // The server returned an error message
             error(new Error(result.error || 'Unknown server error'));
           }
         })
         .catch(function(err) {
-          // Network error, JSON parse error, or any other exception
           error(new Error('Network error: ' + err.message));
         });
     }
 
-    // Cache names and sheet names on load
     function loadCache() {
       callApi('getNames', {}, function(names) {
         cachedNames = names;
         populateNameDropdowns(names);
-        if (document.getElementById('adminTabBtn').style.display !== 'none') {
+        if (document.getElementById('adminTabBtn')) {
           document.getElementById('adminNames').value = names.join('\n');
         }
       }, function(e) { console.warn('Failed to load names:', e); });
@@ -682,8 +678,6 @@
 
     document.getElementById('todayLabel').textContent =
       new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-
-    document.getElementById('adminTabBtn').style.display = 'block';
 
     /* ================= NEW QUERY ================= */
     var selectedStatus = null;
@@ -1306,17 +1300,20 @@
       }
       document.getElementById('saveNamesBtn').disabled = true;
       document.getElementById('adminMsg').textContent = 'Saving...';
-      callApi('saveNamesList', { names: names }, function(result) {
-        document.getElementById('adminMsg').textContent = '✅ ' + result.message;
-        cachedNames = names;
-        populateNameDropdowns(names);
-        document.getElementById('saveNamesBtn').disabled = false;
-      }, function(error) {
-        // error is guaranteed to be an Error object
-        var msg = error && error.message ? error.message : 'Unknown error';
-        document.getElementById('adminMsg').textContent = 'Error: ' + msg;
-        document.getElementById('saveNamesBtn').disabled = false;
-      });
+      callApi('saveNamesList', { names: JSON.stringify(names) },
+        function(result) {
+          var msg = result && result.message ? result.message : 'Names updated.';
+          document.getElementById('adminMsg').textContent = '✅ ' + msg;
+          cachedNames = names;
+          populateNameDropdowns(names);
+          document.getElementById('saveNamesBtn').disabled = false;
+        },
+        function(error) {
+          var msg = error && error.message ? error.message : 'Unknown error';
+          document.getElementById('adminMsg').textContent = 'Error: ' + msg;
+          document.getElementById('saveNamesBtn').disabled = false;
+        }
+      );
     });
 
     /* ================= Keyboard shortcuts ================= */
