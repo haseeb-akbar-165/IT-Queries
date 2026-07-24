@@ -165,14 +165,6 @@
       border-radius: 50%; animation: spin 0.7s linear infinite; margin: 30px auto;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .admin-panel textarea { height: 220px; font-family: 'Inter', monospace; }
-    #saveNamesBtn {
-      margin-top: 16px; padding: 14px 26px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;
-      border: none; border-radius: 12px; font-size: 15px; font-weight: 600; font-family: 'Inter', Arial, sans-serif;
-      cursor: pointer; box-shadow: 0 8px 18px rgba(79,70,229,0.25);
-    }
-    #adminMsg { margin-top: 12px; font-size: 13.5px; color: #6b7085; }
   </style>
 </head>
 <body>
@@ -203,7 +195,6 @@
       <button type="button" class="tab-btn" data-tab="resolve">Resolve</button>
       <button type="button" class="tab-btn" data-tab="edit">Edit</button>
       <button type="button" class="tab-btn" data-tab="dashboard">Dashboard</button>
-      <button type="button" class="tab-btn" data-tab="admin">Admin</button>
     </div>
 
     <!-- ===== NEW QUERY ===== -->
@@ -312,18 +303,6 @@
             <p><strong>Resolved:</strong> <span id="dashResolved">0</span></p>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- ===== ADMIN ===== -->
-    <div id="view-admin" class="view">
-      <h2 style="margin-top:0;">Manage Names</h2>
-      <p style="color:#6b7085; font-size:14px;">Edit the list of names (one per line). Stored in a "Config" sheet, tab-separated by row.</p>
-      <div class="admin-panel">
-        <label for="adminNames" style="margin-top:0;">Names (one per line)</label>
-        <textarea id="adminNames"></textarea>
-        <button id="saveNamesBtn">Save Names</button>
-        <div id="adminMsg"></div>
       </div>
     </div>
   </div>
@@ -435,7 +414,6 @@
         if (tab === 'resolve' && !resolveLoadedOnce) initResolveTab();
         if (tab === 'edit' && !editLoadedOnce) initEditTab();
         if (tab === 'dashboard' && !dashLoadedOnce) initDashboardTab();
-        if (tab === 'admin') loadAdminPanel();
       });
     });
 
@@ -452,7 +430,6 @@
       callApi('getNames', {}, function(names) {
         cachedNames = names;
         populateNameDropdowns(names);
-        document.getElementById('adminNames').value = names.join('\n');
       }, function(e) { console.warn('Failed to load names:', e); });
 
       callApi('getAllSheetNames', {}, function(sheets) {
@@ -1010,55 +987,6 @@
       document.getElementById('dashAssigned').textContent = overall.assign || 0;
       document.getElementById('dashResolved').textContent = overall.out || 0;
     }
-
-    /* ===================================================================
-       ADMIN
-    =================================================================== */
-    function loadAdminPanel() {
-      if (cachedNames) {
-        document.getElementById('adminNames').value = cachedNames.join('\n');
-      } else {
-        callApi('getNames', {}, function(names) {
-          cachedNames = names;
-          document.getElementById('adminNames').value = names.join('\n');
-        });
-      }
-    }
-
-    document.getElementById('saveNamesBtn').addEventListener('click', function() {
-      var text = document.getElementById('adminNames').value;
-      var names = text.split('\n').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
-      if (!names.length) {
-        document.getElementById('adminMsg').textContent = 'Please enter at least one name.';
-        return;
-      }
-      document.getElementById('saveNamesBtn').disabled = true;
-      document.getElementById('adminMsg').textContent = 'Saving...';
-      callApi('saveNamesList', { names: JSON.stringify(names) },
-        function(result) {
-          // Don't trust the input we just sent — re-fetch from the server
-          // so what's shown is the ACTUAL persisted Config sheet content.
-          // If these ever don't match what you typed, the save didn't
-          // really stick (wrong deployment version, wrong sheet, etc).
-          callApi('getNames', {}, function(confirmedNames) {
-            document.getElementById('adminMsg').textContent =
-              '✅ Saved. Server now reports ' + confirmedNames.length + ' name(s): ' + confirmedNames.join(', ');
-            cachedNames = confirmedNames;
-            document.getElementById('adminNames').value = confirmedNames.join('\n');
-            populateNameDropdowns(confirmedNames);
-            document.getElementById('saveNamesBtn').disabled = false;
-          }, function(error) {
-            document.getElementById('adminMsg').textContent = 'Saved, but could not confirm — refresh and check manually. (' + error.message + ')';
-            document.getElementById('saveNamesBtn').disabled = false;
-          });
-        },
-        function(error) {
-          var msg = error && error.message ? error.message : 'Unknown error';
-          document.getElementById('adminMsg').textContent = 'Error: ' + msg;
-          document.getElementById('saveNamesBtn').disabled = false;
-        }
-      );
-    });
 
     /* ===================================================================
        KEYBOARD SHORTCUTS
