@@ -173,11 +173,6 @@
       cursor: pointer; box-shadow: 0 8px 18px rgba(79,70,229,0.25);
     }
     #adminMsg { margin-top: 12px; font-size: 13.5px; color: #6b7085; }
-
-    .public-notice {
-      background: #fffbeb; border: 1.5px solid #fde68a; color: #92400e; font-size: 12px;
-      padding: 10px 14px; border-radius: 10px; margin-top: 18px; line-height: 1.5; position: relative; z-index: 1;
-    }
   </style>
 </head>
 <body>
@@ -197,7 +192,6 @@
       <strong id="todayLabel">Today</strong>
       <span id="targetSheetLabel">Detecting tab…</span>
       <div class="shortcuts">⌘/Ctrl + Enter to save</div>
-      <div class="public-notice">⚠ This page is open to anyone with the link — there is no login. All tabs, including Admin, are visible to every visitor.</div>
     </div>
   </div>
 
@@ -1042,11 +1036,21 @@
       document.getElementById('adminMsg').textContent = 'Saving...';
       callApi('saveNamesList', { names: JSON.stringify(names) },
         function(result) {
-          var msg = result && result.message ? result.message : 'Names updated.';
-          document.getElementById('adminMsg').textContent = '✅ ' + msg;
-          cachedNames = names;
-          populateNameDropdowns(names);
-          document.getElementById('saveNamesBtn').disabled = false;
+          // Don't trust the input we just sent — re-fetch from the server
+          // so what's shown is the ACTUAL persisted Config sheet content.
+          // If these ever don't match what you typed, the save didn't
+          // really stick (wrong deployment version, wrong sheet, etc).
+          callApi('getNames', {}, function(confirmedNames) {
+            document.getElementById('adminMsg').textContent =
+              '✅ Saved. Server now reports ' + confirmedNames.length + ' name(s): ' + confirmedNames.join(', ');
+            cachedNames = confirmedNames;
+            document.getElementById('adminNames').value = confirmedNames.join('\n');
+            populateNameDropdowns(confirmedNames);
+            document.getElementById('saveNamesBtn').disabled = false;
+          }, function(error) {
+            document.getElementById('adminMsg').textContent = 'Saved, but could not confirm — refresh and check manually. (' + error.message + ')';
+            document.getElementById('saveNamesBtn').disabled = false;
+          });
         },
         function(error) {
           var msg = error && error.message ? error.message : 'Unknown error';
