@@ -7,8 +7,178 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://accounts.google.com/gsi/client"></script>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      color: #1f2430;
+      display: flex;
+      min-height: 100vh;
+      background: #f7f9fc;
+    }
+
+    /* BRAND PANEL */
+    .brand {
+      flex: 0 0 34%;
+      min-width: 280px;
+      background: radial-gradient(circle at 20% 15%, #7c7ff2 0%, #4f46e5 55%, #4338ca 100%);
+      color: white;
+      padding: 44px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      overflow-y: auto;
+    }
+    .brand::before {
+      content: ""; position: absolute; width: 480px; height: 480px; border-radius: 50%;
+      background: rgba(255,255,255,0.06); top: -180px; right: -160px;
+    }
+    .brand::after {
+      content: ""; position: absolute; width: 320px; height: 320px; border-radius: 50%;
+      background: rgba(255,255,255,0.05); bottom: -120px; left: -100px;
+    }
+    .brand .icon {
+      width: 56px; height: 56px; border-radius: 16px; background: rgba(255,255,255,0.16);
+      display: flex; align-items: center; justify-content: center; font-size: 26px;
+      backdrop-filter: blur(4px); position: relative; z-index: 1;
+    }
+    .brand h1 { font-size: 28px; font-weight: 700; line-height: 1.2; margin: 20px 0 8px; letter-spacing: -0.5px; position: relative; z-index: 1; }
+    .brand p.sub { font-size: 14px; line-height: 1.55; color: rgba(255,255,255,0.82); margin: 0; max-width: 300px; position: relative; z-index: 1; }
+    .brand .meta { position: relative; z-index: 1; font-size: 13px; color: rgba(255,255,255,0.65); border-top: 1px solid rgba(255,255,255,0.18); padding-top: 16px; }
+    .brand .meta strong { display: block; color: white; font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .stats { display: flex; gap: 10px; position: relative; z-index: 1; margin-bottom: 14px; }
+    .stat { flex: 1; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 10px 6px; text-align: center; }
+    .stat span { display: block; font-size: 20px; font-weight: 700; color: white; line-height: 1; }
+    .stat label { display: block; margin: 5px 0 0; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.4px; color: rgba(255,255,255,0.7); font-weight: 600; }
+    .shortcuts { margin-top: 12px; font-size: 11px; color: rgba(255,255,255,0.55); }
+
+    /* FORM PANEL */
+    .form-panel { flex: 1; display: flex; flex-direction: column; padding: 36px 44px; overflow-y: auto; min-width: 0; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1.5px solid #e2e5ee; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 12px 18px; border: none; background: none; font-family: 'Inter', Arial, sans-serif;
+      font-size: 14.5px; font-weight: 600; color: #8a8fa3; cursor: pointer;
+      border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .tab-btn:hover { color: #4b5063; }
+    .tab-btn.active { color: #4f46e5; border-color: #4f46e5; }
+
+    .view { display: none; max-width: 760px; }
+    .view.active { display: block; }
+
+    label {
+      display: block; font-size: 12.5px; font-weight: 600; color: #5b6072;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; margin-top: 26px;
+    }
+    label:first-of-type { margin-top: 0; }
+    textarea, select, input[type="text"] {
+      width: 100%; padding: 16px 16px; font-size: 16px; font-family: 'Inter', Arial, sans-serif;
+      border: 1.5px solid #e2e5ee; border-radius: 14px; background: #ffffff; color: #1f2430;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease; outline: none;
+    }
+    textarea { height: 150px; resize: vertical; line-height: 1.55; }
+    textarea:focus, select:focus, input[type="text"]:focus { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,0.12); }
+    textarea::placeholder, input::placeholder { color: #b3b7c6; }
+
+    .status-options { display: flex; gap: 12px; }
+    .status-options button {
+      flex: 1; padding: 18px 8px; border: 1.5px solid #e2e5ee; border-radius: 14px; background: #ffffff;
+      color: #4b5063; cursor: pointer; font-size: 14.5px; font-weight: 600; font-family: 'Inter', Arial, sans-serif;
+      transition: all 0.15s ease;
+    }
+    .status-options button:hover { border-color: #c7cbe0; background: #f9fafc; }
+    .status-options button.selected.pending { background: #fff7ed; color: #c2410c; border-color: #fdba74; }
+    .status-options button.selected.assign  { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+    .status-options button.selected.out     { background: #ecfdf5; color: #047857; border-color: #6ee7b7; }
+
+    #saveBtn {
+      margin-top: 34px; width: 100%; padding: 18px; background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white; border: none; border-radius: 14px; font-size: 16.5px; font-weight: 600;
+      font-family: 'Inter', Arial, sans-serif; cursor: pointer; box-shadow: 0 8px 20px rgba(79,70,229,0.28);
+      transition: transform 0.1s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    }
+    #saveBtn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(79,70,229,0.35); }
+    #saveBtn:disabled { background: #d3d5e0; box-shadow: none; cursor: not-allowed; }
+    #undoBtn {
+      margin-top: 12px; width: 100%; padding: 12px; background: #fff5f5; color: #c53030;
+      border: 1.5px solid #fed7d7; border-radius: 12px; font-size: 14px; font-weight: 600;
+      font-family: 'Inter', Arial, sans-serif; cursor: pointer; transition: background 0.15s ease;
+    }
+    #undoBtn:hover:not(:disabled) { background: #ffe8e8; }
+    #undoBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+    #msg { margin-top: 16px; font-size: 13.5px; color: #6b7085; text-align: center; min-height: 16px; }
+
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+    .toolbar label { margin: 0; white-space: nowrap; }
+    .toolbar select { width: auto; padding: 10px 14px; font-size: 13.5px; }
+    .toolbar button {
+      padding: 10px 16px; border: 1.5px solid #e2e5ee; border-radius: 10px; background: #fff;
+      cursor: pointer; font-size: 13.5px; font-weight: 600; color: #4b5063; font-family: 'Inter', Arial, sans-serif;
+    }
+    .toolbar button:hover { background: #f9fafc; }
+
+    .list { display: flex; flex-direction: column; gap: 10px; max-height: 340px; overflow-y: auto; padding-right: 4px; }
+    .item {
+      border: 1.5px solid #e2e5ee; border-radius: 14px; padding: 13px 15px; background: #fff;
+      cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .item:hover { border-color: #c7cbe0; }
+    .item.selected { border-color: #6366f1; background: #eef0ff; }
+    .item .text { font-size: 14.5px; line-height: 1.45; margin-bottom: 6px; }
+    .item .meta { font-size: 12px; color: #6b7085; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .badge {
+      display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 10.5px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .badge.pending { background: #fff7ed; color: #c2410c; }
+    .badge.assign { background: #eff6ff; color: #1d4ed8; }
+    .badge.resolved { background: #ecfdf5; color: #047857; }
+    .empty { color: #6b7085; font-size: 14px; padding: 24px 0; text-align: center; }
+
+    .resolve-panel { display: none; margin-top: 22px; }
+    #resolveBtn, #editSaveBtn {
+      padding: 14px 26px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none;
+      border-radius: 12px; font-size: 15px; font-weight: 600; font-family: 'Inter', Arial, sans-serif;
+      cursor: pointer; box-shadow: 0 8px 18px rgba(79,70,229,0.25);
+    }
+    #resolveBtn { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 8px 18px rgba(5,150,105,0.25); margin-top: 18px; }
+    #resolveBtn:disabled, #editSaveBtn:disabled { background: #d3d5e0; box-shadow: none; cursor: not-allowed; }
+
+    .btn-secondary {
+      padding: 14px 20px; background: #fff5f5; color: #c53030; border: 1.5px solid #fed7d7;
+      border-radius: 12px; font-size: 14px; font-weight: 600; font-family: 'Inter', Arial, sans-serif; cursor: pointer;
+    }
+    .btn-secondary:hover:not(:disabled) { background: #ffe8e8; }
+    .btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    #resolvePanel > div, #editPanel .edit-actions { display: flex; gap: 10px; margin-top: 18px; align-items: center; }
+
+    .chart-container { margin-top: 10px; margin-bottom: 24px; }
+    .chart-container h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #5b6072; margin-bottom: 12px; }
+
+    .spinner {
+      width: 26px; height: 26px; border: 3px solid #e2e5ee; border-top-color: #6366f1;
+      border-radius: 50%; animation: spin 0.7s linear infinite; margin: 30px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .admin-panel textarea { height: 220px; font-family: 'Inter', monospace; }
+    #saveNamesBtn {
+      margin-top: 16px; padding: 14px 26px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;
+      border: none; border-radius: 12px; font-size: 15px; font-weight: 600; font-family: 'Inter', Arial, sans-serif;
+      cursor: pointer; box-shadow: 0 8px 18px rgba(79,70,229,0.25);
+    }
+    #adminMsg { margin-top: 12px; font-size: 13.5px; color: #6b7085; }
+
+    .public-notice {
+      background: #fffbeb; border: 1.5px solid #fde68a; color: #92400e; font-size: 12px;
+      padding: 10px 14px; border-radius: 10px; margin-top: 18px; line-height: 1.5; position: relative; z-index: 1;
+    }
+  </style>
 </head>
 <body>
   <!-- BRAND PANEL -->
@@ -26,40 +196,20 @@
       </div>
       <strong id="todayLabel">Today</strong>
       <span id="targetSheetLabel">Detecting tab…</span>
-      <div class="shortcuts">⌘/Ctrl + Enter to save &nbsp;·&nbsp; Esc to close</div>
+      <div class="shortcuts">⌘/Ctrl + Enter to save</div>
+      <div class="public-notice">⚠ This page is open to anyone with the link — there is no login. All tabs, including Admin, are visible to every visitor.</div>
     </div>
   </div>
 
   <!-- FORM PANEL -->
   <div class="form-panel">
-    <!-- Login / user info -->
-    <div id="loginContainer">
-      <div id="g_id_onload"
-           data-client_id="482478691425-qpe944i7bkggje70drs50i441p18m22e.apps.googleusercontent.com"
-           data-context="signin"
-           data-ux_mode="popup"
-           data-login_uri=""
-           data-auto_prompt="false">
-      </div>
-      <div class="g_id_signin"
-           data-type="standard"
-           data-size="small"
-           data-theme="outline"
-           data-text="sign_in_with"
-           data-shape="rectangular"
-           data-logo_alignment="left">
-      </div>
-      <span id="userEmail" style="display:none;"></span>
-      <button id="logoutBtn" style="display:none;">Logout</button>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs" id="tabContainer">
-      <button type="button" class="tab-btn active" data-tab="new" id="tabNew">New Query</button>
-      <button type="button" class="tab-btn" data-tab="resolve" id="tabResolve" style="display:none;">Resolve</button>
-      <button type="button" class="tab-btn" data-tab="edit" id="tabEdit" style="display:none;">Edit</button>
-      <button type="button" class="tab-btn" data-tab="dashboard" id="tabDashboard" style="display:none;">Dashboard</button>
-      <button type="button" class="tab-btn" data-tab="admin" id="tabAdmin" style="display:none;">Admin</button>
+    <!-- Tabs (all visible, no role gating) -->
+    <div class="tabs">
+      <button type="button" class="tab-btn active" data-tab="new">New Query</button>
+      <button type="button" class="tab-btn" data-tab="resolve">Resolve</button>
+      <button type="button" class="tab-btn" data-tab="edit">Edit</button>
+      <button type="button" class="tab-btn" data-tab="dashboard">Dashboard</button>
+      <button type="button" class="tab-btn" data-tab="admin">Admin</button>
     </div>
 
     <!-- ===== NEW QUERY ===== -->
@@ -70,8 +220,8 @@
         <label>Status</label>
         <div class="status-options" id="statusOptions">
           <button type="button" class="pending" data-value="pending">🕓 Pending</button>
-          <button type="button" class="assign" data-value="assign" id="statusAssign" style="display:none;">🛠️ Assign</button>
-          <button type="button" class="out" data-value="out" id="statusOut" style="display:none;">✅ Query Out</button>
+          <button type="button" class="assign" data-value="assign">🛠️ Assign to Dev</button>
+          <button type="button" class="out" data-value="out">✅ Query Out</button>
         </div>
       </div>
       <div id="step2" style="display:none;">
@@ -83,7 +233,7 @@
       <div id="msg"></div>
     </div>
 
-    <!-- ===== RESOLVE (admin only) ===== -->
+    <!-- ===== RESOLVE ===== -->
     <div id="view-resolve" class="view">
       <div class="toolbar">
         <label for="sheetSelect">Tab</label>
@@ -108,7 +258,7 @@
       </div>
     </div>
 
-    <!-- ===== EDIT (admin only) ===== -->
+    <!-- ===== EDIT ===== -->
     <div id="view-edit" class="view">
       <div class="toolbar">
         <label for="editSheetSelect">Tab</label>
@@ -121,9 +271,9 @@
       </div>
       <label for="editSearch" style="margin-top:0;">Search</label>
       <input type="text" id="editSearch" placeholder="Filter by text...">
-      <div id="editListContainer">
+      <div id="editListContainer" style="margin-top:16px;">
         <div id="editList" class="list"></div>
-        <button id="loadMoreBtn" style="display:none; margin-top:10px; padding:8px; width:100%; background:#f0f2f5; border:1px solid #e2e5ee; border-radius:8px; cursor:pointer;">Load More</button>
+        <button id="loadMoreBtn" style="display:none; margin-top:10px; padding:10px; width:100%; background:#f0f2f5; border:1px solid #e2e5ee; border-radius:10px; cursor:pointer;">Load More</button>
       </div>
       <div id="editPanel" class="resolve-panel">
         <label for="editText">Query text <span style="font-weight:400; text-transform:none; color:#9aa0b3;">(date &amp; time unchanged)</span></label>
@@ -134,15 +284,16 @@
           <option value="assign">Assign to Dev</option>
           <option value="out">Query Out</option>
         </select>
-        <div>
+        <div class="edit-actions">
           <button id="editSaveBtn" disabled>Save Changes</button>
           <button id="undoEditBtn" class="btn-secondary" disabled>↩ Undo</button>
+          <button id="editDeleteBtn" class="btn-secondary" type="button">🗑 Delete</button>
         </div>
         <div id="editMsg"></div>
       </div>
     </div>
 
-    <!-- ===== DASHBOARD (admin only) ===== -->
+    <!-- ===== DASHBOARD ===== -->
     <div id="view-dashboard" class="view">
       <div class="toolbar">
         <label for="dashSheetSelect">Tab</label>
@@ -170,12 +321,12 @@
       </div>
     </div>
 
-    <!-- ===== ADMIN (admin only) ===== -->
+    <!-- ===== ADMIN ===== -->
     <div id="view-admin" class="view">
-      <h2>Manage Names</h2>
-      <p>Edit the list of names (one per line). These will be stored in a "Config" sheet.</p>
+      <h2 style="margin-top:0;">Manage Names</h2>
+      <p style="color:#6b7085; font-size:14px;">Edit the list of names (one per line). Stored in a "Config" sheet, tab-separated by row.</p>
       <div class="admin-panel">
-        <label for="adminNames">Names (one per line)</label>
+        <label for="adminNames" style="margin-top:0;">Names (one per line)</label>
         <textarea id="adminNames"></textarea>
         <button id="saveNamesBtn">Save Names</button>
         <div id="adminMsg"></div>
@@ -185,15 +336,13 @@
 
   <script>
     /* ===================================================================
-       CONFIGURATION – UPDATE THESE
+       CONFIGURATION – UPDATE THIS
     =================================================================== */
     var API_BASE = 'https://script.google.com/macros/s/AKfycbyEcBTJPWjnIisV6mPCSQJgiZe1KJB0T5KVofiirD_Rn_guBFchVUr9tus1vMa7rBf3rA/exec';
-    var CLIENT_ID = '482478691425-qpe944i7bkggje70drs50i441p18m22e.apps.googleusercontent.com';
 
     /* ===================================================================
-       GLOBAL STATE
+       GLOBAL STATE  (no currentUser / role anymore — open to everyone)
     =================================================================== */
-    var currentUser = null;
     var cachedNames = null;
     var cachedSheetNames = null;
     var selectedStatus = null;
@@ -206,7 +355,6 @@
     var editOffset = 0;
     var editLimit = 20;
     var editHasMore = false;
-    var editAllItems = [];
     var editSearchTimer = null;
     var selectedResolveRow = null;
     var currentResolveSheet = null;
@@ -216,12 +364,11 @@
     var dashChart2 = null;
 
     /* ===================================================================
-       API CALL
+       API CALL  (no email/auth param sent — backend has no auth either)
     =================================================================== */
     function callApi(action, data, success, error) {
       var url = API_BASE + '?action=' + encodeURIComponent(action);
       data = data || {};
-      data.email = currentUser ? currentUser.email : '';
       for (var key in data) {
         if (data.hasOwnProperty(key)) {
           url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
@@ -233,144 +380,12 @@
           return response.json();
         })
         .then(function(result) {
-          if (result.success) {
-            success(result.data);
-          } else {
-            error(new Error(result.error || 'Unknown server error'));
-          }
+          if (result.success) success(result.data);
+          else error(new Error(result.error || 'Unknown server error'));
         })
         .catch(function(err) {
           error(new Error('Network error: ' + err.message));
         });
-    }
-
-    /* ===================================================================
-       LOGIN / LOGOUT
-    =================================================================== */
-    function initLogin() {
-      window.onSignIn = function(response) {
-        var payload = parseJwt(response.credential);
-        var email = payload.email;
-        if (!email) {
-          alert('Could not retrieve email. Please try again.');
-          return;
-        }
-        currentUser = { email: email, role: null };
-        callApi('getUserRole', {}, function(role) {
-          currentUser.role = role;
-          if (role === 'none') {
-            alert('You are not authorized to use this tool. Please contact admin.');
-            signOut();
-            return;
-          }
-          showUIForRole(role);
-          document.getElementById('userEmail').textContent = 'Signed in as: ' + email;
-          document.getElementById('userEmail').style.display = 'inline';
-          document.getElementById('logoutBtn').style.display = 'inline';
-          document.querySelector('.g_id_signin').style.display = 'none';
-          loadCache();
-          loadInitialData();
-        }, function(err) {
-          alert('Error checking role: ' + err.message);
-        });
-      };
-
-      document.getElementById('logoutBtn').addEventListener('click', signOut);
-      window.onGoogleLibraryLoad = function() {
-        // google.accounts.id.prompt(); // optional auto-prompt
-      };
-    }
-
-    function parseJwt(token) {
-      var base64Url = token.split('.')[1];
-      var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
-    }
-
-    function signOut() {
-      currentUser = null;
-      document.getElementById('userEmail').style.display = 'none';
-      document.getElementById('logoutBtn').style.display = 'none';
-      document.querySelector('.g_id_signin').style.display = 'block';
-      showUIForRole('none');
-      location.reload();
-    }
-
-    /* ===================================================================
-       ROLE-BASED UI
-    =================================================================== */
-    function showUIForRole(role) {
-      var isAdmin = (role === 'admin');
-      document.getElementById('tabResolve').style.display = isAdmin ? '' : 'none';
-      document.getElementById('tabEdit').style.display = isAdmin ? '' : 'none';
-      document.getElementById('tabDashboard').style.display = isAdmin ? '' : 'none';
-      document.getElementById('tabAdmin').style.display = isAdmin ? '' : 'none';
-      document.getElementById('statusAssign').style.display = isAdmin ? '' : 'none';
-      document.getElementById('statusOut').style.display = isAdmin ? '' : 'none';
-
-      if (!isAdmin && selectedStatus && selectedStatus !== 'pending') {
-        selectedStatus = 'pending';
-        document.querySelectorAll('.status-options button').forEach(function(b) {
-          b.classList.toggle('selected', b.dataset.value === 'pending');
-        });
-      }
-
-      if (role === 'none') {
-        document.getElementById('saveBtn').disabled = true;
-        document.getElementById('queryText').disabled = true;
-        document.querySelectorAll('.status-options button').forEach(function(b) { b.disabled = true; });
-        document.querySelectorAll('.tab-btn').forEach(function(b) {
-          if (b.id !== 'tabNew') b.style.display = 'none';
-        });
-        document.getElementById('tabNew').style.display = '';
-      } else {
-        document.getElementById('queryText').disabled = false;
-        document.querySelectorAll('.status-options button').forEach(function(b) { b.disabled = false; });
-        document.querySelectorAll('.tab-btn').forEach(function(b) {
-          if (b.id === 'tabNew') b.style.display = '';
-          else if (b.id === 'tabResolve' || b.id === 'tabEdit' || b.id === 'tabDashboard' || b.id === 'tabAdmin') {
-            b.style.display = isAdmin ? '' : 'none';
-          }
-        });
-      }
-    }
-
-    /* ===================================================================
-       LOAD CACHE & INITIAL DATA
-    =================================================================== */
-    function loadCache() {
-      if (!currentUser) return;
-      callApi('getNames', {}, function(names) {
-        cachedNames = names;
-        populateNameDropdowns(names);
-        document.getElementById('adminNames').value = names.join('\n');
-      }, function(e) { console.warn('Failed to load names:', e); });
-
-      if (currentUser.role === 'admin') {
-        callApi('getAllSheetNames', {}, function(sheets) {
-          cachedSheetNames = sheets;
-          populateSheetDropdowns(sheets);
-        }, function(e) { console.warn('Failed to load sheet names:', e); });
-      }
-    }
-
-    function loadInitialData() {
-      if (!currentUser) return;
-      callApi('getTodayStats', {}, function(stats) { updateStats(stats); }, function(e) { console.warn(e); });
-      callApi('getTargetSheetInfo', {}, function(info) {
-        var label = document.getElementById('targetSheetLabel');
-        if (info.found) label.textContent = 'Saving to tab: "' + info.name + '"';
-        else { label.innerHTML = '⚠ No tab found for "' + info.name + '" — create it.'; label.style.color = '#fecaca'; }
-      }, function(e) { console.warn(e); });
-
-      setInterval(function() {
-        if (currentUser) {
-          callApi('getTodayStats', {}, function(stats) { updateStats(stats); }, function() {});
-        }
-      }, 10000);
     }
 
     /* ===================================================================
@@ -389,8 +404,7 @@
         sel.appendChild(placeholder);
         names.forEach(function(n) {
           var opt = document.createElement('option');
-          opt.value = n;
-          opt.textContent = n;
+          opt.value = n; opt.textContent = n;
           sel.appendChild(opt);
         });
         if (currentVal && names.indexOf(currentVal) !== -1) sel.value = currentVal;
@@ -406,8 +420,7 @@
         sel.innerHTML = '';
         sheets.forEach(function(s) {
           var opt = document.createElement('option');
-          opt.value = s;
-          opt.textContent = s;
+          opt.value = s; opt.textContent = s;
           sel.appendChild(opt);
         });
         if (currentVal && sheets.indexOf(currentVal) !== -1) sel.value = currentVal;
@@ -435,7 +448,37 @@
     document.getElementById('todayLabel').textContent =
       new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-    initLogin();
+    /* ===================================================================
+       INITIAL LOAD  (runs immediately — no login gate)
+    =================================================================== */
+    loadCache();
+    loadInitialData();
+
+    function loadCache() {
+      callApi('getNames', {}, function(names) {
+        cachedNames = names;
+        populateNameDropdowns(names);
+        document.getElementById('adminNames').value = names.join('\n');
+      }, function(e) { console.warn('Failed to load names:', e); });
+
+      callApi('getAllSheetNames', {}, function(sheets) {
+        cachedSheetNames = sheets;
+        populateSheetDropdowns(sheets);
+      }, function(e) { console.warn('Failed to load sheet names:', e); });
+    }
+
+    function loadInitialData() {
+      callApi('getTodayStats', {}, function(stats) { updateStats(stats); }, function(e) { console.warn(e); });
+      callApi('getTargetSheetInfo', {}, function(info) {
+        var label = document.getElementById('targetSheetLabel');
+        if (info.found) label.textContent = 'Saving to tab: "' + info.name + '"';
+        else { label.innerHTML = '⚠ No tab found for "' + info.name + '" — create it.'; label.style.color = '#fecaca'; }
+      }, function(e) { console.warn(e); });
+
+      setInterval(function() {
+        callApi('getTodayStats', {}, function(stats) { updateStats(stats); }, function() {});
+      }, 10000);
+    }
 
     /* ===================================================================
        NEW QUERY LOGIC
@@ -536,13 +579,12 @@
     =================================================================== */
     function initResolveTab() {
       resolveLoadedOnce = true;
-      var sheetSel = document.getElementById('sheetSelect');
       if (cachedSheetNames) {
         populateSheetDropdowns(cachedSheetNames);
-        currentResolveSheet = sheetSel.value;
-      }
-      if (cachedNames) populateNameDropdowns(cachedNames);
-      if (!cachedSheetNames) {
+        currentResolveSheet = document.getElementById('sheetSelect').value;
+        loadResolveDates();
+        loadOpenQueries();
+      } else {
         callApi('getAllSheetNames', {}, function(sheets) {
           cachedSheetNames = sheets;
           populateSheetDropdowns(sheets);
@@ -550,11 +592,10 @@
           loadResolveDates();
           loadOpenQueries();
         });
-      } else {
-        loadResolveDates();
-        loadOpenQueries();
       }
-      if (!cachedNames) {
+      if (cachedNames) {
+        populateNameDropdowns(cachedNames);
+      } else {
         callApi('getNames', {}, function(names) {
           cachedNames = names;
           populateNameDropdowns(names);
@@ -598,9 +639,7 @@
       var dateFilter = document.getElementById('resolveDateSelect').value;
       var nameFilter = document.getElementById('resolveNameFilter').value;
       callApi('getOpenQueries', {
-        sheetName: currentResolveSheet,
-        dateFilter: dateFilter,
-        nameFilter: nameFilter
+        sheetName: currentResolveSheet, dateFilter: dateFilter, nameFilter: nameFilter
       }, function(items) {
         container.innerHTML = '';
         var list = document.createElement('div');
@@ -615,10 +654,7 @@
 
     function renderResolveList(items, list) {
       list.innerHTML = '';
-      if (!items.length) {
-        list.innerHTML = '<div class="empty">No open queries 🎉</div>';
-        return;
-      }
+      if (!items.length) { list.innerHTML = '<div class="empty">No open queries 🎉</div>'; return; }
       items.forEach(function(item) {
         var badgeClass = item.status === 'Pending' ? 'pending' : 'assign';
         var el = document.createElement('div');
@@ -663,9 +699,7 @@
       document.getElementById('resolveBtn').disabled = true;
       document.getElementById('resolveMsg').textContent = 'Saving...';
       callApi('resolveQueryEntry', {
-        sheetName: currentResolveSheet,
-        rowNumber: selectedResolveRow,
-        name: name
+        sheetName: currentResolveSheet, rowNumber: selectedResolveRow, name: name
       }, function(result) {
         document.getElementById('resolveMsg').textContent = '✅ ' + result.message;
         document.getElementById('undoResolveBtn').disabled = false;
@@ -682,12 +716,9 @@
       document.getElementById('undoResolveBtn').disabled = true;
       document.getElementById('resolveMsg').textContent = 'Undoing resolve...';
       callApi('restoreRow', {
-        sheetName: currentResolveSheet,
-        rowNumber: resolveUndoData.row,
-        pending: resolveUndoData.pending,
-        assign: resolveUndoData.assign,
-        out: ''
-      }, function(result) {
+        sheetName: currentResolveSheet, rowNumber: resolveUndoData.row,
+        pending: resolveUndoData.pending, assign: resolveUndoData.assign, out: ''
+      }, function() {
         document.getElementById('resolveMsg').textContent = '✅ Undo successful.';
         resolveUndoData = null;
         document.getElementById('undoResolveBtn').disabled = true;
@@ -704,13 +735,12 @@
     =================================================================== */
     function initEditTab() {
       editLoadedOnce = true;
-      var sheetSel = document.getElementById('editSheetSelect');
       if (cachedSheetNames) {
         populateSheetDropdowns(cachedSheetNames);
-        editCurrentSheet = sheetSel.value;
-      }
-      if (cachedNames) populateNameDropdowns(cachedNames);
-      if (!cachedSheetNames) {
+        editCurrentSheet = document.getElementById('editSheetSelect').value;
+        loadEditDates();
+        loadEditQueries(true);
+      } else {
         callApi('getAllSheetNames', {}, function(sheets) {
           cachedSheetNames = sheets;
           populateSheetDropdowns(sheets);
@@ -718,9 +748,6 @@
           loadEditDates();
           loadEditQueries(true);
         });
-      } else {
-        loadEditDates();
-        loadEditQueries(true);
       }
     }
 
@@ -741,7 +768,6 @@
       clearTimeout(editSearchTimer);
       editSearchTimer = setTimeout(function() { loadEditQueries(true); }, 400);
     });
-
     document.getElementById('loadMoreBtn').addEventListener('click', function() {
       if (editHasMore) loadEditQueries(false);
     });
@@ -763,7 +789,6 @@
     function loadEditQueries(reset) {
       if (reset) {
         editOffset = 0;
-        editAllItems = [];
         document.getElementById('editList').innerHTML = '';
         document.getElementById('loadMoreBtn').style.display = 'none';
       }
@@ -784,30 +809,21 @@
       var nameFilter = document.getElementById('editNameFilter').value;
 
       callApi('getQueriesForEdit', {
-        sheetName: editCurrentSheet,
-        searchText: searchText,
-        dateFilter: dateFilter,
-        nameFilter: nameFilter,
-        offset: editOffset,
-        limit: editLimit
+        sheetName: editCurrentSheet, searchText: searchText, dateFilter: dateFilter,
+        nameFilter: nameFilter, offset: editOffset, limit: editLimit
       }, function(result) {
         var spinnerEl = document.getElementById('editLoadMoreSpinner');
         if (spinnerEl) spinnerEl.remove();
         if (reset) list.innerHTML = '';
         var items = result.items || [];
         editHasMore = result.hasMore || false;
-        editAllItems = editAllItems.concat(items);
         if (reset && !items.length) {
           list.innerHTML = '<div class="empty">No matching queries.</div>';
           document.getElementById('loadMoreBtn').style.display = 'none';
           return;
         }
-        renderEditListItems(items, list, reset);
-        if (editHasMore) {
-          document.getElementById('loadMoreBtn').style.display = 'block';
-        } else {
-          document.getElementById('loadMoreBtn').style.display = 'none';
-        }
+        renderEditListItems(items, list);
+        document.getElementById('loadMoreBtn').style.display = editHasMore ? 'block' : 'none';
         editOffset += items.length;
       }, function(error) {
         var spinnerEl = document.getElementById('editLoadMoreSpinner');
@@ -816,14 +832,12 @@
       });
     }
 
-    function renderEditListItems(items, list, reset) {
+    function renderEditListItems(items, list) {
       if (!items.length) return;
       items.forEach(function(item) {
         var badgeClass = item.status === 'Pending' ? 'pending' : (item.status === 'Assign to Dev' ? 'assign' : 'resolved');
         var el = document.createElement('div');
         el.className = 'item';
-        el.dataset.row = item.row;
-        el.dataset.status = item.status;
         el.innerHTML =
           '<div class="text"></div><div class="meta">' +
           '<span class="badge ' + badgeClass + '"></span>' +
@@ -871,16 +885,8 @@
       document.getElementById('editSaveBtn').disabled = true;
       document.getElementById('editMsg').textContent = 'Saving...';
 
-      callApi('updateQueryText', {
-        sheetName: editCurrentSheet,
-        rowNumber: editSelectedRow,
-        newText: text
-      }, function(result) {
-        callApi('updateQueryStatus', {
-          sheetName: editCurrentSheet,
-          rowNumber: editSelectedRow,
-          newStatus: newStatus
-        }, function(result2) {
+      callApi('updateQueryText', { sheetName: editCurrentSheet, rowNumber: editSelectedRow, newText: text }, function(result) {
+        callApi('updateQueryStatus', { sheetName: editCurrentSheet, rowNumber: editSelectedRow, newStatus: newStatus }, function(result2) {
           document.getElementById('editMsg').textContent = '✅ ' + result.message + ' | ' + result2.message;
           document.getElementById('undoEditBtn').disabled = false;
           loadEditQueries(true);
@@ -899,16 +905,8 @@
       document.getElementById('undoEditBtn').disabled = true;
       document.getElementById('editMsg').textContent = 'Undoing edit...';
       var oldStatus = editUndoData.status === 'Pending' ? 'pending' : (editUndoData.status === 'Assign to Dev' ? 'assign' : 'out');
-      callApi('updateQueryText', {
-        sheetName: editCurrentSheet,
-        rowNumber: editUndoData.row,
-        newText: editUndoData.text
-      }, function(result) {
-        callApi('updateQueryStatus', {
-          sheetName: editCurrentSheet,
-          rowNumber: editUndoData.row,
-          newStatus: oldStatus
-        }, function(result2) {
+      callApi('updateQueryText', { sheetName: editCurrentSheet, rowNumber: editUndoData.row, newText: editUndoData.text }, function(result) {
+        callApi('updateQueryStatus', { sheetName: editCurrentSheet, rowNumber: editUndoData.row, newStatus: oldStatus }, function() {
           document.getElementById('editMsg').textContent = '✅ Undo successful.';
           editUndoData = null;
           document.getElementById('undoEditBtn').disabled = true;
@@ -923,23 +921,38 @@
       });
     });
 
+    document.getElementById('editDeleteBtn').addEventListener('click', function() {
+      if (!editSelectedRow) return;
+      var text = document.getElementById('editText').value;
+      if (!confirm('Permanently delete this query?\n\n"' + text + '"\n\nThis cannot be undone.')) return;
+      document.getElementById('editDeleteBtn').disabled = true;
+      document.getElementById('editSaveBtn').disabled = true;
+      document.getElementById('editMsg').textContent = 'Deleting...';
+      callApi('deleteQuery', { sheetName: editCurrentSheet, rowNumber: editSelectedRow }, function(result) {
+        document.getElementById('editMsg').textContent = '✅ ' + result.message;
+        loadEditQueries(true);
+        callApi('getTodayStats', {}, function(stats) { updateStats(stats); }, function() {});
+      }, function(error) {
+        document.getElementById('editMsg').textContent = 'Error: ' + error.message;
+        document.getElementById('editDeleteBtn').disabled = false;
+        document.getElementById('editSaveBtn').disabled = false;
+      });
+    });
+
     /* ===================================================================
        DASHBOARD
     =================================================================== */
     function initDashboardTab() {
       dashLoadedOnce = true;
-      var sheetSel = document.getElementById('dashSheetSelect');
       if (cachedSheetNames) {
         populateSheetDropdowns(cachedSheetNames);
-      }
-      if (!cachedSheetNames) {
+        loadDashboard();
+      } else {
         callApi('getAllSheetNames', {}, function(sheets) {
           cachedSheetNames = sheets;
           populateSheetDropdowns(sheets);
           loadDashboard();
         });
-      } else {
-        loadDashboard();
       }
       document.getElementById('dashRefreshBtn').addEventListener('click', loadDashboard);
       document.getElementById('dashSheetSelect').addEventListener('change', loadDashboard);
@@ -986,10 +999,7 @@
             { label: 'Resolved', data: out, backgroundColor: '#6ee7b7' }
           ]
         },
-        options: {
-          responsive: true,
-          scales: { x: { stacked: true }, y: { stacked: true } }
-        }
+        options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true } } }
       });
 
       var ctx2 = document.getElementById('statusChart').getContext('2d');
@@ -997,10 +1007,7 @@
         type: 'pie',
         data: {
           labels: ['Pending', 'Assigned', 'Resolved'],
-          datasets: [{
-            data: [overall.pending || 0, overall.assign || 0, overall.out || 0],
-            backgroundColor: ['#fdba74', '#93c5fd', '#6ee7b7']
-          }]
+          datasets: [{ data: [overall.pending || 0, overall.assign || 0, overall.out || 0], backgroundColor: ['#fdba74', '#93c5fd', '#6ee7b7'] }]
         },
         options: { responsive: true }
       });
